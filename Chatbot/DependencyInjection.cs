@@ -20,6 +20,7 @@ namespace Chatbot
             services.AddSingleton<ICacheService, CacheService>();
             services.AddSingleton<IIndexService, IndexService>();
             services.AddSingleton<IMessageProcessor, MessageProcessor>();
+            services.AddSingleton<IChatbotService, ChatbotService>();
             //services.AddSingleton<IMessageProcessor, MessageProcessor>();
         }
     }
