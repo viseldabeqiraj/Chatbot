@@ -13,15 +13,13 @@ namespace Chatbot.Utils
             List<IntentData> trainingData = new List<IntentData>();
 
             string jsonData = await File.ReadAllTextAsync("C:\\Users\\User\\Documents\\train.json");
-            DatasetDto? dataset = JsonConvert.DeserializeObject<DatasetDto>(jsonData);
+            var dataset = JsonConvert.DeserializeObject<List<DatasetDto>>(jsonData);
 
-            foreach (ChatbotEntry entry in dataset.Entries)
+            foreach (var data in dataset)
             {
-                foreach (QueryResult queryResult in entry.UsedQueries)
+                foreach (var queryResult in data.ViewedDocTitles)
                 {
-                    string query = queryResult.Query;
-
-                    foreach (Result result in queryResult.Results)
+                    foreach (var result in data.UsedQueries[0].Results)
                     {
                         string message = result.Snippet;
                         string intent = result.Title;
@@ -30,19 +28,23 @@ namespace Chatbot.Utils
 
                         if (trainingData.Count >= BatchSize)
                         {
-                            ProcessTrainingDataBatch(trainingData);
+                            //ProcessTrainingDataBatch(trainingData);
+                            //trainingData.Clear();
                         }
                     }
                 }
             }
 
             // Process the remaining training data if it doesn't form a complete batch
-            if (trainingData.Count > 0)
-            {
-                ProcessTrainingDataBatch(trainingData);
-            }
+            //if (trainingData.Count > 0)
+            //{
+            //    ProcessTrainingDataBatch(trainingData);
+            //}
+
             return trainingData;
         }
+
+
 
         private void ProcessTrainingDataBatch(List<IntentData> trainingData)
         {

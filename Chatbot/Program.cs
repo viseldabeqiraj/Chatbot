@@ -1,4 +1,7 @@
 using Chatbot;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Bot.Builder.Integration.AspNet.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +22,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseBotFramework();
 
 app.UseHttpsRedirection();
 

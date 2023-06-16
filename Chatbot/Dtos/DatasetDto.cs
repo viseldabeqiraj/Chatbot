@@ -4,42 +4,62 @@ namespace Chatbot.Dtos
 {
     public class DatasetDto
     {
-        public List<ChatbotEntry> Entries { get; set; }
-
-    }
-
-    public class ChatbotEntry
-    {
+        [JsonProperty("viewed_doc_titles")]
         public List<string> ViewedDocTitles { get; set; }
-        public List<QueryResult> UsedQueries { get; set; }
-        public List<Annotation> Annotations { get; set; }
+
+        [JsonProperty("used_queries")]
+        public List<UsedQueryDto> UsedQueries { get; set; }
+
+        [JsonProperty("annotations")]
+        public List<AnnotationDto> Annotations { get; set; }
+
+        [JsonProperty("nq_answer")]
         public List<string> NQAnswer { get; set; }
+
+        [JsonProperty("id")]
         public string Id { get; set; }
+
+        [JsonProperty("nq_doc_title")]
         public string NQDocTitle { get; set; }
+
+        [JsonProperty("question")]
         public string Question { get; set; }
     }
 
-    public class QueryResult
+    public class UsedQueryDto
     {
+        [JsonProperty("query")]
         public string Query { get; set; }
+
+        [JsonProperty("results")]
         public List<Result> Results { get; set; }
     }
 
     public class Result
     {
+        [JsonProperty("title")]
         public string Title { get; set; }
+
+        [JsonProperty("snippet")]
         public string Snippet { get; set; }
     }
 
-    public class Annotation
+    public class AnnotationDto
     {
+        [JsonProperty("type")]
         public string Type { get; set; }
-        public List<QAPair> QAPairs { get; set; }
+
+        [JsonProperty("qaPairs")]
+        public List<QAPairDto> QAPairs { get; set; }
     }
 
-    public class QAPair
+    public class QAPairDto
     {
+        [JsonProperty("question")]
         public string Question { get; set; }
+
+        [JsonProperty("answer")]
         public List<string> Answer { get; set; }
     }
+
 }

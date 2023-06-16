@@ -48,7 +48,7 @@ namespace Chatbot.ChatbotHandler
         {
             List<IntentData> trainingData = await FetchTrainingDataAsync().ConfigureAwait(false);
             List<Result> results = trainingData
-                .Where(data => string.Equals(_indexService.NormalizeMessage(data.Message), _indexService.NormalizeMessage(userMessage), StringComparison.OrdinalIgnoreCase))
+                .Where(data => string.Equals(_indexService.NormalizeMessage(data.Intent), _indexService.NormalizeMessage(userMessage), StringComparison.OrdinalIgnoreCase))
                 .Select(data => new Result { Title = data.Intent, Snippet = data.Message })
                 .ToList();
 

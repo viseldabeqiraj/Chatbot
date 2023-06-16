@@ -9,13 +9,34 @@ namespace Chatbot.ChatbotHandler
     /// A class that implements the IBot interface or inherits from a bot framework-specific base class (e.g., ActivityHandler). 
     /// This is where you'll define the chatbot's behavior and handle user messages.
     /// </summary>
-    public class ChatbotHandling : ActivityHandler
+    public class ChatbotHandling : IBot //ActivityHandler
     {
         private readonly IChatbotService _chatbotService;
 
         public ChatbotHandling(IChatbotService chatbotService)
         {
             _chatbotService = chatbotService;
+        }
+
+        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (turnContext.Activity.Type == ActivityTypes.Message)
+                {
+                    var userMessage = turnContext.Activity.Text;
+                    turnContext.Activity.Locale = "en-US"; 
+                    List<Result> results = await _chatbotService.GetResultsAsync(userMessage);
+
+                    IntentData? response = _chatbotService.ProcessUserMessage(userMessage, results);
+                    var test = MessageFactory.Text(response?.Message);
+                    await turnContext.SendActivityAsync(MessageFactory.Text(response?.Message), cancellationToken);
+                }
+            }
+            catch(Exception ex) 
+            { 
+
+            }
         }
 
         /// <summary>
@@ -25,16 +46,17 @@ namespace Chatbot.ChatbotHandler
         /// <param name="turnContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
-        {
-            var userMessage = turnContext.Activity.Text;
+        
+        //protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        //{
+        //    var userMessage = turnContext.Activity.Text;
 
-            List<Result> results = await _chatbotService.GetResultsAsync(userMessage);
+        //    List<Result> results = await _chatbotService.GetResultsAsync(userMessage);
 
-            IntentData? response = _chatbotService.ProcessUserMessage(userMessage, results);
+        //    IntentData? response = _chatbotService.ProcessUserMessage(userMessage, results);
 
-            await turnContext.SendActivityAsync(MessageFactory.Text(response.Message), cancellationToken);
-        }
+        //    await turnContext.SendActivityAsync(MessageFactory.Text(response.Message), cancellationToken);
+        //}
     }
 
 }

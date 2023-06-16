@@ -1,12 +1,11 @@
 ﻿using Chatbot.ChatbotHandler;
-using Chatbot.Dtos;
 using Chatbot.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
+
 
 namespace Chatbot.Controllers
 {
@@ -14,11 +13,10 @@ namespace Chatbot.Controllers
     [ApiController]
     public class ChatbotController : ControllerBase
     {
-        private readonly IBotFrameworkHttpAdapter _adapter;
+        private readonly BotAdapter _adapter;
         private readonly IBot _bot;
         private readonly IChatbotService _chatbotService;
-
-        public ChatbotController(IBotFrameworkHttpAdapter adapter, IBot bot, IChatbotService chatbotService)
+        public ChatbotController(BotAdapter adapter, IBot bot, IChatbotService chatbotService)
         {
             _adapter = adapter;
             _bot = bot;
@@ -26,30 +24,35 @@ namespace Chatbot.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReceiveMessage([FromBody] Activity activity)
+        public async Task<IActionResult> ReceiveMessage()
         {
-            var bot = new ChatbotHandling(_chatbotService); // Injected instance of IChatbotService
+            var bot = new ChatbotHandling(_chatbotService);
 
             var httpContext = HttpContext;
 
-            await _adapter.ProcessAsync(httpContext.Request, httpContext.Response, bot, CancellationToken.None);
+            var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
+            var receivedActivity = JsonConvert.DeserializeObject<Activity>(body);
+
+            var turnContext = new TurnContext(_adapter, receivedActivity);
+
+            await bot.OnTurnAsync(turnContext);
 
             return Ok();
         }
+
         [HttpPost(nameof(SendResponse))]
         public async Task<IActionResult> SendResponse()
         {
-            // Read the incoming request
-            var requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
+            var bot = new ChatbotHandling(_chatbotService);
 
-            // Convert the request body to an Activity
-            var activity = JsonConvert.DeserializeObject<Activity>(requestBody);
+            var httpContext = HttpContext;
 
-            // Create a turn context from the incoming activity
-            var turnContext = new TurnContext(_adapter, activity);
+            var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
+            var receivedActivity = JsonConvert.DeserializeObject<Activity>(body);
 
-            // Process the turn context
-            await _bot.OnTurnAsync(turnContext);
+            var turnContext = new TurnContext(_adapter, receivedActivity);
+
+            await bot.OnTurnAsync(turnContext);
 
             return Ok();
         }

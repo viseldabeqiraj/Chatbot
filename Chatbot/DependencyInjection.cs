@@ -6,6 +6,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Chatbot.Interfaces;
 using Chatbot.Indexing;
 using Chatbot.MessageProcessing;
+using Chatbot.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Chatbot
 {
@@ -14,13 +16,16 @@ namespace Chatbot
         public static void AddWeApiServices(this IServiceCollection services)
         {
             //services.AddControllers().AddNewtonsoftJson();
-            services.AddSingleton<IBotFrameworkHttpAdapter, BotFrameworkHttpAdapter>();
+            //services.AddSingleton<IBotFrameworkHttpAdapter, BotFrameworkHttpAdapter>();
+            services.AddSingleton<BotAdapter, CloudAdapter>();
+            services.AddSingleton<ITrainingDataService, TrainingDataService>();
             services.AddTransient<IBot, ChatbotHandling>();
             services.AddMemoryCache();
             services.AddSingleton<ICacheService, CacheService>();
             services.AddSingleton<IIndexService, IndexService>();
             services.AddSingleton<IMessageProcessor, MessageProcessor>();
             services.AddSingleton<IChatbotService, ChatbotService>();
+           
             //services.AddSingleton<IMessageProcessor, MessageProcessor>();
         }
     }
