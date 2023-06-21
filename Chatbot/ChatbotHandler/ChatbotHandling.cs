@@ -9,7 +9,7 @@ namespace Chatbot.ChatbotHandler
     /// A class that implements the IBot interface or inherits from a bot framework-specific base class (e.g., ActivityHandler). 
     /// This is where you'll define the chatbot's behavior and handle user messages.
     /// </summary>
-    public class ChatbotHandling : IBot //ActivityHandler
+    public class ChatbotHandling : ActivityHandler
     {
         private readonly IChatbotService _chatbotService;
 
@@ -18,26 +18,34 @@ namespace Chatbot.ChatbotHandler
             _chatbotService = chatbotService;
         }
 
-        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            var responseActivities = new List<Activity>();
+
             try
             {
                 if (turnContext.Activity.Type == ActivityTypes.Message)
                 {
                     var userMessage = turnContext.Activity.Text;
-                    turnContext.Activity.Locale = "en-US"; 
                     List<Result> results = await _chatbotService.GetResultsAsync(userMessage);
 
                     IntentData? response = _chatbotService.ProcessUserMessage(userMessage, results);
-                    var test = MessageFactory.Text(response?.Message);
-                    await turnContext.SendActivityAsync(MessageFactory.Text(response?.Message), cancellationToken);
+                    var activity = MessageFactory.Text(response?.Message);
+
+                    // Add the response activity to the list
+                    var responseActivity = MessageFactory.Text(response?.Message, inputHint: InputHints.AcceptingInput);
+                    responseActivities.Add(responseActivity);
                 }
             }
-            catch(Exception ex) 
-            { 
-
+            catch (Exception ex)
+            {
+                // Handle any exceptions here
             }
+
+            // Return the response activities to the caller
+            await turnContext.SendActivitiesAsync(responseActivities.ToArray(), cancellationToken);
         }
+
 
         /// <summary>
         /// method is overridden to handle incoming message activities from the user. 
@@ -46,7 +54,7 @@ namespace Chatbot.ChatbotHandler
         /// <param name="turnContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        
+
         //protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         //{
         //    var userMessage = turnContext.Activity.Text;

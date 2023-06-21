@@ -1,10 +1,7 @@
 ﻿using Chatbot.ChatbotHandler;
-using Chatbot.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
-using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Schema;
-using Newtonsoft.Json;
 
 
 namespace Chatbot.Controllers
@@ -14,48 +11,68 @@ namespace Chatbot.Controllers
     public class ChatbotController : ControllerBase
     {
         private readonly BotAdapter _adapter;
-        private readonly IBot _bot;
-        private readonly IChatbotService _chatbotService;
-        public ChatbotController(BotAdapter adapter, IBot bot, IChatbotService chatbotService)
+        private readonly ChatbotHandling _chatbotHandling;
+        public ChatbotController(BotAdapter adapter, ChatbotHandling chatbotHandling)
         {
             _adapter = adapter;
-            _bot = bot;
-            _chatbotService = chatbotService;
+            _chatbotHandling = chatbotHandling;
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReceiveMessage()
+        public async Task<IActionResult> ReceiveMessage([FromBody] Activity activity)
         {
-            var bot = new ChatbotHandling(_chatbotService);
+            var turnContext = new TurnContext(_adapter, activity);
+            var responseActivity = default(Activity);
 
-            var httpContext = HttpContext;
+            try
+            {
+                turnContext.OnSendActivities(async (ctx, activities, next) =>
+                {
+                    responseActivity = activities.FirstOrDefault();
+                    return await next().ConfigureAwait(false);
+                });
 
-            var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
-            var receivedActivity = JsonConvert.DeserializeObject<Activity>(body);
+                var cancellationToken = default(CancellationToken);
+                await _chatbotHandling.OnTurnAsync(turnContext, cancellationToken);
 
-            var turnContext = new TurnContext(_adapter, receivedActivity);
-
-            await bot.OnTurnAsync(turnContext);
-
-            return Ok();
+                if (responseActivity != null)
+                {
+                    return Ok(responseActivity);
+                }
+                else
+                {
+                    // No response activity found
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions here
+                return StatusCode(500); // or any appropriate error response
+            }
         }
 
-        [HttpPost(nameof(SendResponse))]
-        public async Task<IActionResult> SendResponse()
-        {
-            var bot = new ChatbotHandling(_chatbotService);
 
-            var httpContext = HttpContext;
 
-            var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
-            var receivedActivity = JsonConvert.DeserializeObject<Activity>(body);
 
-            var turnContext = new TurnContext(_adapter, receivedActivity);
 
-            await bot.OnTurnAsync(turnContext);
 
-            return Ok();
-        }
+        //[HttpPost(nameof(SendResponse))]
+        //public async Task<IActionResult> SendResponse()
+        //{
+        //    var bot = new ChatbotHandling(_chatbotService);
+
+        //    var httpContext = HttpContext;
+
+        //    var body = await new StreamReader(httpContext.Request.Body).ReadToEndAsync();
+        //    var receivedActivity = JsonConvert.DeserializeObject<Activity>(body);
+
+        //    var turnContext = new TurnContext(_adapter, receivedActivity);
+
+        //    await bot.OnTurnAsync(turnContext);
+
+        //    return Ok();
+        //}
 
         //[HttpPost]
         //public async Task<IActionResult> Chat(string userMessage)

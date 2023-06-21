@@ -8,6 +8,9 @@ namespace Chatbot.MessageProcessing
     {
         public IntentData ProcessUserMessage(string message, List<Result> trainingData)
         {
+            if (trainingData.Count == 0)
+                return new IntentData { Message = "I do not have information about that.", Intent = "Error" };
+
             Result? bestMatch = null;
             int minDistance = int.MaxValue;
 

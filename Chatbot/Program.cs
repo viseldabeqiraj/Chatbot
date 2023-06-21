@@ -1,13 +1,10 @@
 using Chatbot;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Bot.Builder.Integration.AspNet.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var services = builder.Services;
-services.AddWeApiServices();
+services.AddWebApiServices();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -23,7 +20,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseBotFramework();
+//app.UseBotFramework();
 
 app.UseHttpsRedirection();
 
