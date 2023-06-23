@@ -1,4 +1,5 @@
 ﻿using Chatbot.ChatbotHandler;
+using Chatbot.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
@@ -17,31 +18,30 @@ namespace Chatbot.Controllers
             _adapter = adapter;
             _chatbotHandling = chatbotHandling;
         }
-
         [HttpPost]
         public async Task<IActionResult> ReceiveMessage([FromBody] Activity activity)
         {
-            var turnContext = new TurnContext(_adapter, activity);
-            var responseActivity = default(Activity);
-
             try
             {
-                turnContext.OnSendActivities(async (ctx, activities, next) =>
-                {
-                    responseActivity = activities.FirstOrDefault();
-                    return await next().ConfigureAwait(false);
-                });
-
+                var turnContext = new TurnContext(_adapter, activity);
                 var cancellationToken = default(CancellationToken);
+
+                // Process the incoming message
                 await _chatbotHandling.OnTurnAsync(turnContext, cancellationToken);
 
+                // Retrieve the result from ChatbotHandling
+                var responseActivity = _chatbotHandling.GetResponseActivity();
+
+                // Check if the response activity has a value (result from the chatbot)
                 if (responseActivity != null)
                 {
-                    return Ok(responseActivity);
+                    responseActivity.Recipient = activity.From;
+                    responseActivity.ChannelId = activity.ChannelId;
+                    return Ok(responseActivity); // Return the response activity to the sender
                 }
                 else
                 {
-                    // No response activity found
+                    // No response activity or result found
                     return NotFound();
                 }
             }
@@ -51,7 +51,6 @@ namespace Chatbot.Controllers
                 return StatusCode(500); // or any appropriate error response
             }
         }
-
 
 
 

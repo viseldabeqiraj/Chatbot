@@ -12,16 +12,19 @@ namespace Chatbot.ChatbotHandler
     public class ChatbotHandling : ActivityHandler
     {
         private readonly IChatbotService _chatbotService;
+        private Activity? _responseActivity; 
 
         public ChatbotHandling(IChatbotService chatbotService)
         {
             _chatbotService = chatbotService;
         }
+        public Activity GetResponseActivity()
+        {
+            return _responseActivity;
+        }
 
         public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            var responseActivities = new List<Activity>();
-
             try
             {
                 if (turnContext.Activity.Type == ActivityTypes.Message)
@@ -30,21 +33,33 @@ namespace Chatbot.ChatbotHandler
                     List<Result> results = await _chatbotService.GetResultsAsync(userMessage);
 
                     IntentData? response = _chatbotService.ProcessUserMessage(userMessage, results);
-                    var activity = MessageFactory.Text(response?.Message);
 
-                    // Add the response activity to the list
-                    var responseActivity = MessageFactory.Text(response?.Message, inputHint: InputHints.AcceptingInput);
-                    responseActivities.Add(responseActivity);
+                    // Create the response activity
+                    var responseActivity = MessageFactory.Text(response?.Message);
+                    responseActivity.Recipient = turnContext.Activity.From;
+                    responseActivity.ChannelId = turnContext.Activity.ChannelId;
+                    responseActivity.Type = ActivityTypesEx.InvokeResponse;
+                    _responseActivity = responseActivity;
+
+
+
+                    await turnContext.SendActivityAsync(responseActivity, cancellationToken).ConfigureAwait(false);
+                   // await turnContext.SendActivityAsync(new Activity { Value = response, Type = ActivityTypesEx.InvokeResponse }, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
                 // Handle any exceptions here
-            }
+                // Log the exception for troubleshooting
+                Console.WriteLine($"An error occurred: {ex}");
 
-            // Return the response activities to the caller
-            await turnContext.SendActivitiesAsync(responseActivities.ToArray(), cancellationToken);
+                // Return an error response if desired
+                var errorMessage = MessageFactory.Text("An error occurred while processing your request.");
+                await turnContext.SendActivityAsync(errorMessage, cancellationToken);
+            }
         }
+
+
 
 
         /// <summary>

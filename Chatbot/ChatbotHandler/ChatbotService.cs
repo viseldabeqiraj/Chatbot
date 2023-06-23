@@ -10,6 +10,7 @@ namespace Chatbot.ChatbotHandler
         private readonly IMessageProcessor _messageProcessor;
         private readonly ITrainingDataService _trainingDataService;
         private Dictionary<string, List<Result>> _index;
+        private List<IntentData> _trainingData;
 
         public ChatbotService(ICacheService cacheService, IIndexService indexService, IMessageProcessor messageProcessor, ITrainingDataService trainingDataService)
         {
@@ -43,34 +44,25 @@ namespace Chatbot.ChatbotHandler
             return results;
         }
 
-        private async Task<List<Result>> FetchResultsFromTrainingDataAsync(string userMessage)
+        private Task<List<Result>> FetchResultsFromTrainingDataAsync(string userMessage)
         {
-            List<IntentData> trainingData = await FetchTrainingDataAsync().ConfigureAwait(false);
-            List<Result> results = trainingData
+            List<Result> results = _trainingData
                 .Where(data => string.Equals(_indexService.NormalizeMessage(data.Intent), _indexService.NormalizeMessage(userMessage), StringComparison.OrdinalIgnoreCase))
                 .Select(data => new Result { Title = data.Intent, Snippet = data.Message })
                 .ToList();
 
-            return results;
+            return Task.FromResult(results);
         }
 
-        private async Task<List<IntentData>> FetchTrainingDataAsync()
+        private async Task BuildIndexAsync()
         {
-            List<IntentData> trainingData = await _trainingDataService.LoadTrainingData().ConfigureAwait(false);
-            return trainingData;
-
+            _trainingData = await _trainingDataService.LoadTrainingData().ConfigureAwait(false);
+            _indexService.BuildIndex(_trainingData, _index);
         }
 
         public IntentData? ProcessUserMessage(string userMessage, List<Result> results)
         {
             return _messageProcessor.ProcessUserMessage(userMessage, results);
         }
-
-        private async Task BuildIndexAsync()
-        {
-            List<IntentData> trainingData = await FetchTrainingDataAsync();
-            _indexService.BuildIndex(trainingData, _index);
-        }
-    
     }
 }
